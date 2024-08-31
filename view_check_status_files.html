@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Client Status Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-image: url(''); /* Thay đổi đường dẫn đến hình nền của bạn */
+            background-size: cover;
+            background-position: center;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .u-shape-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 80%;
+            height: 80%;
+            position: relative;
+            background: rgba(255, 255, 255, 0.8); /* Thêm màu nền mờ để nổi bật hơn trên hình nền */
+            border-radius: 10px;
+            padding: 20px;
+        }
+        .u-shape {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+        .u-top {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 1200px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        .u-bottom {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+        }
+        .client-card {
+            width: 150px;
+            height: 150px;
+            background-color: #ffffff;
+            border: 1px solid #ddd;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            border-radius: 8px;
+            position: relative;
+        }
+        .client-card h2 {
+            font-size: 1em;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        .client-card .status-ok {
+            color: green;
+            font-weight: bold;
+        }
+        .client-card .status-error {
+            color: red;
+            font-weight: bold;
+        }
+        .client-card .file-count {
+            font-size: 1.2em;
+            color: #4CAF50;
+            margin-bottom: 5px;
+        }
+        .client-card .client-icon {
+            position: absolute;
+            top: -20px;
+            left: -20px;
+            width: 40px;
+            height: 40px;
+            background-color: #4CAF50;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            color: white;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+        }
+        .client-card .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .status-ok-indicator {
+            background-color: green;
+        }
+        .status-error-indicator {
+            background-color: red;
+        }
+        .u-bottom .client-card {
+            margin: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="u-shape-container">
+        <div class="u-shape">
+            <div class="u-top" id="uTop"></div>
+            <div class="u-bottom" id="uBottom"></div>
+        </div>
+    </div>
+
+    <script>
+        async function fetchData() {
+            try {
+                const response = await fetch('http://localhost:8080/');
+                const data = await response.json();
+                populateTable(data);
+            } catch (error) {
+                console.error("Error fetching data:", error);
+            }
+        }
+
+        function populateTable(data) {
+            const uTop = document.getElementById('uTop');
+            const uBottom = document.getElementById('uBottom');
+            uTop.innerHTML = '';
+            uBottom.innerHTML = '';
+
+            const totalRecords = data.length;
+            const half = Math.ceil(totalRecords / 2);
+            const topData = data.slice(0, half);
+            const bottomData = data.slice(half);
+
+            // Sắp xếp các client vào phần trên của chữ U
+            topData.forEach((client, index) => {
+                const now = new Date();
+                const lastModified = new Date(client.LastModified);
+                const timeDifference = Math.floor((now - lastModified) / 60000);
+
+                const fileCount = client.FileCount < 10 && client.FileCount > 0 
+                                ? '0' + client.FileCount 
+                                : client.FileCount;
+
+                const clientCard = document.createElement('div');
+                clientCard.className = 'client-card';
+                clientCard.innerHTML = `
+                    <div class="client-icon">${client.FileName[0]}</div>
+                    <h2>${client.FileName}</h2>
+                    <div class="file-count">${fileCount} Files</div>
+                    <div class="${timeDifference <= 5 ? 'status-ok' : 'status-error'}">
+                        ${timeDifference <= 5 ? 'OK' : 'Error'}
+                    </div>
+                    <div class="status-indicator ${timeDifference <= 5 ? 'status-ok-indicator' : 'status-error-indicator'}"></div>
+                `;
+                uTop.appendChild(clientCard);
+            });
+
+            // Sắp xếp các client vào phần dưới của chữ U (đáy chữ U)
+            bottomData.forEach((client) => {
+                const now = new Date();
+                const lastModified = new Date(client.LastModified);
+                const timeDifference = Math.floor((now - lastModified) / 60000);
+
+                const fileCount = client.FileCount < 10 && client.FileCount > 0 
+                                ? '0' + client.FileCount 
+                                : client.FileCount;
+
+                const clientCard = document.createElement('div');
+                clientCard.className = 'client-card';
+                clientCard.innerHTML = `
+                    <div class="client-icon">${client.FileName[0]}</div>
+                    <h2>${client.FileName}</h2>
+                    <div class="file-count">${fileCount} Files</div>
+                    <div class="${timeDifference <= 5 ? 'status-ok' : 'status-error'}">
+                        ${timeDifference <= 5 ? 'OK' : 'Error'}
+                    </div>
+                    <div class="status-indicator ${timeDifference <= 5 ? 'status-ok-indicator' : 'status-error-indicator'}"></div>
+                `;
+                uBottom.appendChild(clientCard);
+            });
+        }
+
+        setInterval(fetchData, 300000);
+
+        fetchData();
+    </script>
+</body>
+</html>
